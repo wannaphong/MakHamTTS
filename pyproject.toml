@@ -1,0 +1,56 @@
+[project]
+name = "makhamtts"
+version = "0.1.0"
+description = "Lightweight, high-performance Thai Text-to-Speech powered by Thai Paradee ONNX"
+readme = "README.md"
+license = "Apache-2.0"
+requires-python = ">=3.10"
+authors = [
+    { name = "Wannaphong Phatthiyaphaibun", email = "wannaphong@yahoo.com" },
+]
+keywords = ["thai", "tts", "text-to-speech", "kokoro", "paradee", "onnx", "pythainlp"]
+classifiers = [
+    "Development Status :: 4 - Beta",
+    "Intended Audience :: Developers",
+    "License :: OSI Approved :: Apache Software License",
+    "Programming Language :: Python :: 3",
+    "Topic :: Multimedia :: Sound/Audio :: Speech",
+    "Topic :: Text Processing :: Linguistic",
+]
+dependencies = [
+    "pythainlp>=5.3.4",
+    "onnxruntime>=1.17.0",
+    "numpy>=1.24.0",
+    "huggingface-hub>=0.23.0",
+]
+
+[project.optional-dependencies]
+audio = [
+    "soundfile>=0.12.0",
+]
+dev = [
+    "pytest>=8.0.0",
+]
+
+[project.scripts]
+makhamtts = "makhamtts.__main__:main"
+
+[project.urls]
+"Homepage" = "https://github.com/wannaphong/MakHamTTS"
+"Repository" = "https://github.com/wannaphong/MakHamTTS.git"
+"Model" = "https://huggingface.co/pythainlp/MakHamTTS"
+
+[build-system]
+requires = ["hatchling"]
+build-backend = "hatchling.build"
+
+[tool.hatch.build.targets.wheel]
+packages = ["makhamtts"]
+
+[tool.hatch.build.targets.wheel.force-include]
+"data/dict.txt" = "makhamtts/data/dict.txt"
+"data/ipa.json" = "makhamtts/data/ipa.json"
+"data/fallback" = "makhamtts/data/fallback"
+
+[tool.pytest.ini_options]
+testpaths = ["tests"]
