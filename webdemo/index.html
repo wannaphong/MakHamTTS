@@ -137,11 +137,11 @@
     </footer>
   </div>
 
-  <!-- ONNX Runtime Web Script -->
-  <script src="lib/ort.min.js"></script>
+  <!-- ONNX Runtime Web Script (CDN with local fallback) -->
+  <script src="https://cdn.jsdelivr.net/npm/onnxruntime-web@1.20.1/dist/ort.min.js"></script>
   <script>
     if (typeof ort === 'undefined') {
-      document.write('<script src="https://cdn.jsdelivr.net/npm/onnxruntime-web@1.20.1/dist/ort.min.js"><\/script>');
+      document.write('<script src="lib/ort.min.js"><\/script>');
     }
   </script>
 

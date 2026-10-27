@@ -67,15 +67,22 @@ export class ParadeeTTS {
       throw new Error("ONNX Runtime Web (ort) is not loaded.");
     }
 
-    // Configure WASM paths
+    // Configure WASM paths (detect local lib or default to CDN)
+    const CDN_WASM_PATH = "https://cdn.jsdelivr.net/npm/onnxruntime-web@1.20.1/dist/";
     if (ort.env && ort.env.wasm) {
       if (typeof window !== "undefined") {
+        let selectedWasmPath = CDN_WASM_PATH;
         try {
-          // Must be an absolute URL or start with './' to avoid bare specifier error in browser import()
-          ort.env.wasm.wasmPaths = new URL("./lib/", window.location.href).href;
+          // Probe if local lib is available (returns 200 OK without 404)
+          const localCheckUrl = new URL("./lib/ort-wasm-simd-threaded.mjs", window.location.href).href;
+          const checkRes = await fetch(localCheckUrl, { method: "HEAD" });
+          if (checkRes.ok) {
+            selectedWasmPath = new URL("./lib/", window.location.href).href;
+          }
         } catch {
-          ort.env.wasm.wasmPaths = "./lib/";
+          selectedWasmPath = CDN_WASM_PATH;
         }
+        ort.env.wasm.wasmPaths = selectedWasmPath;
       }
       if (typeof self !== "undefined" && self.crossOriginIsolated) {
         ort.env.wasm.numThreads = Math.min(4, navigator.hardwareConcurrency || 2);
