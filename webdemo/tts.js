@@ -70,7 +70,12 @@ export class ParadeeTTS {
     // Configure WASM paths
     if (ort.env && ort.env.wasm) {
       if (typeof window !== "undefined") {
-        ort.env.wasm.wasmPaths = "lib/";
+        try {
+          // Must be an absolute URL or start with './' to avoid bare specifier error in browser import()
+          ort.env.wasm.wasmPaths = new URL("./lib/", window.location.href).href;
+        } catch {
+          ort.env.wasm.wasmPaths = "./lib/";
+        }
       }
       if (typeof self !== "undefined" && self.crossOriginIsolated) {
         ort.env.wasm.numThreads = Math.min(4, navigator.hardwareConcurrency || 2);
@@ -114,8 +119,15 @@ export class ParadeeTTS {
     };
 
     if (typeof window !== "undefined") {
-      // Browser: fetch with progress if possible
-      session = await ort.InferenceSession.create(modelPath, sessionOptions);
+      try {
+        session = await ort.InferenceSession.create(modelPath, sessionOptions);
+      } catch (localErr) {
+        console.warn("Local WASM session creation failed, retrying with CDN fallback...", localErr);
+        if (ort.env && ort.env.wasm) {
+          ort.env.wasm.wasmPaths = "https://cdn.jsdelivr.net/npm/onnxruntime-web@1.20.1/dist/";
+        }
+        session = await ort.InferenceSession.create(modelPath, sessionOptions);
+      }
     } else {
       // Node.js
       const fs = await import("fs");
