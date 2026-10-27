@@ -4,7 +4,7 @@ import argparse
 import sys
 from pathlib import Path
 
-from makhamtts.tts import TTS
+from makhamtts.tts import TTS, AVAILABLE_MODELS, DEFAULT_MODEL
 
 
 def main():
@@ -14,6 +14,13 @@ def main():
     )
     parser.add_argument("text", nargs="?", help="Thai text to speak (reads stdin if omitted)")
     parser.add_argument("-o", "--out", default="out.wav", help="Output WAV path (default: out.wav)")
+    parser.add_argument(
+        "-m",
+        "--model",
+        default=DEFAULT_MODEL,
+        choices=list(AVAILABLE_MODELS.keys()),
+        help=f"Model preset to use (default: {DEFAULT_MODEL})",
+    )
     parser.add_argument("--speed", type=float, default=1.0, help="Speech speed multiplier (default: 1.0)")
     parser.add_argument("--fp32", action="store_true", help="Use full-precision FP32 model instead of INT8")
     parser.add_argument("--model-path", default=None, help="Custom local path to ONNX model")
@@ -27,6 +34,7 @@ def main():
     tts = TTS(
         model_path=args.model_path,
         config_path=args.config_path,
+        model=args.model,
         quantized=not args.fp32,
         speed=args.speed,
     )

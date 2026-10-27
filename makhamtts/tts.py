@@ -5,9 +5,15 @@ adapted for standalone single-voice Paradee ONNX models trained on Thai phonolog
 
 Model weights:
   Hosted on HuggingFace at https://huggingface.co/pythainlp/MakHamTTS
-  - INT8 (default, 82.7 MB): https://huggingface.co/pythainlp/MakHamTTS/blob/main/paradee_thai/makham_female_thai_int8.onnx
-  - FP32 (325.5 MB):        https://huggingface.co/pythainlp/MakHamTTS/blob/main/paradee_thai/makham_female_thai.onnx
-  - Config (vocab):         https://huggingface.co/pythainlp/MakHamTTS/blob/main/paradee_thai/config.json
+  - paradee_thai (default):
+    - INT8 (8.07 MB):  https://huggingface.co/pythainlp/MakHamTTS/resolve/main/paradee_thai/paradee_thai_int8.onnx
+    - FP32 (33.17 MB): https://huggingface.co/pythainlp/MakHamTTS/resolve/main/paradee_thai/paradee_thai.onnx
+    - Config:          https://huggingface.co/pythainlp/MakHamTTS/resolve/main/paradee_thai/config.json
+    - Run script:      https://huggingface.co/pythainlp/MakHamTTS/resolve/main/paradee_thai/run.py
+  - makham_female_thai:
+    - INT8 (82.7 MB):  https://huggingface.co/pythainlp/MakHamTTS/resolve/main/fastthaig2p_single_model/makham_female_thai_int8.onnx
+    - FP32 (325.5 MB): https://huggingface.co/pythainlp/MakHamTTS/resolve/main/fastthaig2p_single_model/makham_female_thai.onnx
+    - Config:          https://huggingface.co/pythainlp/MakHamTTS/resolve/main/fastthaig2p_single_model/config.json
 
 Features:
   - Self-contained single-voice ONNX: No external voicepack required at runtime.
@@ -41,18 +47,35 @@ logger = logging.getLogger("MakHamTTS")
 HF_REPO = "pythainlp/MakHamTTS"
 HF_RESOLVE_BASE = f"https://huggingface.co/{HF_REPO}/resolve/main"
 
-DEFAULT_ASSETS = {
-    "int8_model": "paradee_thai/makham_female_thai_int8.onnx",
-    "fp32_model": "paradee_thai/makham_female_thai.onnx",
-    "config": "paradee_thai/config.json",
+AVAILABLE_MODELS = {
+    "paradee_thai": {
+        "int8_model": "paradee_thai/paradee_thai_int8.onnx",
+        "fp32_model": "paradee_thai/paradee_thai.onnx",
+        "config": "paradee_thai/config.json",
+        "run_script": "paradee_thai/run.py",
+        "name": "Paradee Thai Female (Paradee 1.1)",
+        "description": "8.07 MB INT8 / 33.17 MB FP32, ultra-fast distillation (>45x RT)",
+    },
+    "makham_female_thai": {
+        "int8_model": "fastthaig2p_single_model/makham_female_thai_int8.onnx",
+        "fp32_model": "fastthaig2p_single_model/makham_female_thai.onnx",
+        "config": "fastthaig2p_single_model/config.json",
+        "name": "Makham Female Thai (Kokoro-82M Thai single-voice)",
+        "description": "82.7 MB INT8 / 325.5 MB FP32",
+    },
 }
+
+DEFAULT_MODEL = "paradee_thai"
+DEFAULT_ASSETS = AVAILABLE_MODELS[DEFAULT_MODEL]
 
 # Local candidate search paths (useful when working inside the labtts workspace)
 LOCAL_SEARCH_DIRS = [
+    Path("/workspace/labtts/paradee/models/paradee_thai"),
+    Path("./paradee_thai"),
+    Path("./models/paradee_thai"),
     Path("/workspace/labtts/dist/paradee_thai"),
     Path("./dist/paradee_thai"),
     Path("../dist/paradee_thai"),
-    Path("/workspace/labtts/paradee/models/paradee_thai"),
 ]
 
 
@@ -71,10 +94,27 @@ def _resolve_asset(filename: str) -> Path:
         return dest
 
     base_name = Path(filename).name
-    # Map alternative names between repo and local dist
-    alias_names = [base_name]
-    if "makham_female_thai_int8" in base_name:
+
+    # 1. Exact match check in local search directories
+    for search_dir in LOCAL_SEARCH_DIRS:
+        candidate = search_dir / base_name
+        if candidate.exists() and candidate.stat().st_size > 0:
+            dest.parent.mkdir(parents=True, exist_ok=True)
+            try:
+                import shutil
+                shutil.copy2(candidate, dest)
+                return dest
+            except Exception:
+                return candidate
+
+    # 2. Check alternative alias names if not found by exact name
+    alias_names = []
+    if "paradee_thai_int8" in base_name:
+        alias_names.append("makham_female_thai_int8.onnx")
+    elif "makham_female_thai_int8" in base_name:
         alias_names.append("paradee_thai_int8.onnx")
+    elif "paradee_thai" in base_name:
+        alias_names.append("makham_female_thai.onnx")
     elif "makham_female_thai" in base_name:
         alias_names.append("paradee_thai.onnx")
 
@@ -90,7 +130,7 @@ def _resolve_asset(filename: str) -> Path:
                 except Exception:
                     return candidate
 
-    # Download from HuggingFace Hub
+    # 3. Download from HuggingFace Hub
     dest.parent.mkdir(parents=True, exist_ok=True)
     try:
         from huggingface_hub import hf_hub_download
@@ -104,7 +144,7 @@ def _resolve_asset(filename: str) -> Path:
     except Exception as hf_err:
         logger.debug(f"hf_hub_download failed ({hf_err}), falling back to direct URL download...")
 
-    # Fallback direct download via HTTP
+    # 4. Fallback direct download via HTTP
     url = f"{HF_RESOLVE_BASE}/{filename}"
     print(f"Downloading {filename} from {url} → {dest} ...")
     tmp = dest.with_suffix(dest.suffix + ".part")
@@ -161,6 +201,7 @@ class TTS:
         self,
         model_path: Optional[Union[str, Path]] = None,
         config_path: Optional[Union[str, Path]] = None,
+        model: Optional[str] = None,
         quantized: bool = True,
         speed: float = 1.0,
         intra_op_threads: int = 0,
@@ -168,18 +209,28 @@ class TTS:
         """Initialize MakHamTTS session.
 
         Args:
-            model_path: Path to local ONNX model, or None to download from HuggingFace.
-            config_path: Path to local config.json, or None to download from HuggingFace.
-            quantized: If True (default), downloads the 82.7 MB INT8 model; if False, the 325 MB FP32 model.
+            model_path: Path to local ONNX model, model name preset, or None to download/resolve.
+            config_path: Path to local config.json, or None to download/resolve.
+            model: Model preset name ("paradee_thai" or "makham_female_thai", default: "paradee_thai").
+            quantized: If True (default), downloads the lightweight INT8 model; if False, FP32 model.
             speed: Speech speed multiplier (default 1.0).
             intra_op_threads: CPU thread count for onnxruntime (0 = automatic).
         """
         import onnxruntime as ort
 
+        # Support passing model preset as first positional argument
+        if isinstance(model_path, str) and model_path in AVAILABLE_MODELS:
+            model = model_path
+            model_path = None
+
+        selected_model_name = model or DEFAULT_MODEL
+        model_assets = AVAILABLE_MODELS.get(selected_model_name, AVAILABLE_MODELS[DEFAULT_MODEL])
+        self.model_name = selected_model_name
+
         # Resolve model path
         if model_path is None:
             model_key = "int8_model" if quantized else "fp32_model"
-            model_path = _resolve_asset(DEFAULT_ASSETS[model_key])
+            model_path = _resolve_asset(model_assets[model_key])
         else:
             model_path = Path(model_path)
             if not model_path.exists():
@@ -188,9 +239,11 @@ class TTS:
 
         # Resolve config path
         if config_path is None:
-            config_path = _resolve_asset(DEFAULT_ASSETS["config"])
+            config_path = _resolve_asset(model_assets["config"])
         else:
             config_path = Path(config_path)
+            if not config_path.exists():
+                config_path = _resolve_asset(str(config_path))
 
         if not model_path.exists():
             raise FileNotFoundError(f"Model file not found: {model_path}")

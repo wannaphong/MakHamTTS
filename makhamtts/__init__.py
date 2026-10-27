@@ -16,14 +16,23 @@ except ImportError:
     from fastthaig2p.tokenizer import Tokenizer
 
 __version__ = "0.1.0"
-__all__ = ["G2P", "Tokenizer", "normalize", "ipa_to_kokoro", "TTS", "__version__"]
+__all__ = [
+    "G2P",
+    "Tokenizer",
+    "normalize",
+    "ipa_to_kokoro",
+    "TTS",
+    "AVAILABLE_MODELS",
+    "DEFAULT_MODEL",
+    "__version__",
+]
 
 
 def __getattr__(name):
-    if name == "TTS":
+    if name in ("TTS", "AVAILABLE_MODELS", "DEFAULT_MODEL"):
         try:
-            from makhamtts.tts import TTS
+            import makhamtts.tts as tts_module
         except ImportError:
-            from fastthaig2p.tts import TTS
-        return TTS
+            import fastthaig2p.tts as tts_module
+        return getattr(tts_module, name)
     raise AttributeError(f"module {__name__!r} has no attribute {name!r}")

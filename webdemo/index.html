@@ -1,0 +1,144 @@
+<!DOCTYPE html>
+<html lang="th">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>MakHamTTS Web Demo - Paradee Thai INT8 ONNX</title>
+  <meta name="description" content="Pure Client-Side In-Browser Thai Text-to-Speech using Paradee Thai INT8 ONNX and ONNX Runtime Web. Zero Python needed.">
+  <link rel="stylesheet" href="style.css">
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link href="https://fonts.googleapis.com/css2?family=Sarabun:wght@400;500;600;700&display=swap" rel="stylesheet">
+</head>
+<body>
+  <div class="container">
+    <!-- Header -->
+    <header>
+      <div class="badge">
+        <span>⚡ 100% Client-Side In-Browser</span>
+        <span>•</span>
+        <span>Zero Python</span>
+      </div>
+      <h1>MakHamTTS Web Demo</h1>
+      <p class="subtitle">
+        เสียงพูดภาษาไทยธรรมชาติด้วยโมเดล <strong>paradee_thai_int8.onnx</strong> (8.07 MB)
+        ประมวลผลบนเบราว์เซอร์ผ่าน ONNX Runtime Web (WASM SIMD) ทั้งหมด
+      </p>
+    </header>
+
+    <!-- Model Status -->
+    <div id="statusBox" class="status-box loading">
+      <div id="statusIcon">
+        <div class="spinner"></div>
+      </div>
+      <div id="statusText" class="status-text">กำลังโหลดโมเดลและพจนานุกรม...</div>
+    </div>
+
+    <!-- Main Card -->
+    <div class="card">
+      <!-- Preset Examples -->
+      <div class="section-label">
+        <span>ตัวอย่างประโยคทดสอบ (Examples)</span>
+      </div>
+      <div class="presets-container">
+        <button type="button" class="preset-chip" data-text="สวัสดีค่ะ ยินดีต้อนรับสู่บริการของเรา">👋 สวัสดีทักทาย</button>
+        <button type="button" class="preset-chip" data-text="ยอดเงินคงเหลือสามพันห้าร้อยบาทถ้วน">💰 ธุรกรรม & ตัวเลข</button>
+        <button type="button" class="preset-chip" data-text="กรุณารอสักครู่ค่ะ ขอบคุณที่ใช้บริการ">🎧 บริการลูกค้า</button>
+        <button type="button" class="preset-chip" data-text="พบกันเวลา 14:30 น. ที่ กทม.">⏰ เวลา & ตัวย่อ</button>
+        <button type="button" class="preset-chip" data-text="ติดต่อ somchai@gmail.com หรือโทร 081-234-5678">📧 อีเมล & โทรศัพท์</button>
+        <button type="button" class="preset-chip" data-text="มะขามหวานเพชรบูรณ์อร่อยมาก คุณภาพดี">🌿 มะขามหวาน</button>
+      </div>
+
+      <!-- Text Input -->
+      <div class="input-wrapper">
+        <textarea id="textInput" placeholder="พิมพ์หรือวางข้อความภาษาไทยที่นี่... (เช่น สวัสดีครับ ยินดีต้อนรับสู่ MakHamTTS)">สวัสดีค่ะ ยินดีต้อนรับสู่บริการของเรา</textarea>
+        <div class="input-footer">
+          <span id="charCount">0 ตัวอักษร</span>
+          <button type="button" id="clearBtn" class="preset-chip" style="display:none; padding: 2px 8px; font-size: 0.78rem;">ล้างข้อความ</button>
+        </div>
+      </div>
+
+      <!-- Controls -->
+      <div class="controls-grid">
+        <div class="control-item">
+          <div class="speed-header">
+            <span>ความเร็วในการพูด (Speech Speed)</span>
+            <span id="speedVal" class="speed-badge">1.0x</span>
+          </div>
+          <input type="range" id="speedSlider" min="0.5" max="2.0" step="0.1" value="1.0">
+        </div>
+        <div class="control-item">
+          <button id="synthesizeBtn" class="btn-primary" disabled>
+            <div id="btnSpinner" class="spinner" style="display:none; border-top-color:#ffffff;"></div>
+            <span id="btnText">สังเคราะห์เสียง (Synthesize)</span>
+          </button>
+        </div>
+      </div>
+
+      <div style="font-size:0.8rem; color:var(--text-dim); text-align:right;">
+        กด <kbd style="background:#0f172a; padding:2px 6px; border-radius:4px; border:1px solid #334155;">Ctrl</kbd> + <kbd style="background:#0f172a; padding:2px 6px; border-radius:4px; border:1px solid #334155;">Enter</kbd> เพื่อสังเคราะห์เสียงได้ทันที
+      </div>
+    </div>
+
+    <!-- Output Card (Hidden initially, shown after synthesis) -->
+    <div id="outputCard" class="card output-card" style="display: none;">
+      <div class="output-header">
+        <div class="section-label" style="margin-bottom:0;">
+          🔊 ผลลัพธ์เสียงพูด (Synthesized Audio)
+        </div>
+        <div class="metrics-row">
+          <div class="metric-pill">ประมวลผล: <span id="metricLatency">0 ms</span></div>
+          <div class="metric-pill">ความยาว: <span id="metricDuration">0.00 s</span></div>
+          <div class="metric-pill">ประสิทธิภาพ: <span id="metricSpeedup">0x</span></div>
+        </div>
+      </div>
+
+      <!-- Waveform Canvas -->
+      <canvas id="waveformCanvas" class="visualizer-canvas"></canvas>
+
+      <!-- Audio Controls -->
+      <div class="audio-controls-row">
+        <audio id="audioPlayer" controls></audio>
+        <button id="playOutputBtn" type="button" class="btn-action">
+          ▶️ เล่น / หยุด
+        </button>
+        <a id="downloadBtn" class="btn-action btn-download" href="#" download="paradee_thai.wav">
+          ⬇️ ดาวน์โหลด WAV
+        </a>
+      </div>
+
+      <!-- Technical Inspection -->
+      <details>
+        <summary>🔍 ดูการแปลงหน่วยเสียง (Phoneme Breakdown & Details)</summary>
+        <div style="display:flex; flex-direction:column; gap:8px; margin-top:8px;">
+          <div style="font-size:0.82rem; color:var(--text-muted);">Kokoro Phonemes (วรรณยุกต์: → สามัญ, ↓ เอก, ↘ โท, ↑ ตรี, ↗ จัตวา):</div>
+          <div id="phonemesBox" class="phonemes-box"></div>
+          <div style="font-size:0.8rem; color:var(--text-dim); line-height: 1.5;">
+            โมเดล: <strong>paradee_thai_int8.onnx</strong> (Distilled Thai Paradee 1.1) • อัตราสุ่ม: <strong>24,000 Hz</strong> • ลำดับโทเคน: Baked-in single voice • ไพป์ไลน์: Pure JavaScript (Normalizer + Tokenizer + G2P + ONNX Runtime Web WASM)
+          </div>
+        </div>
+      </details>
+    </div>
+
+    <!-- Footer -->
+    <footer>
+      <div>
+        ขับเคลื่อนด้วย <a href="https://github.com/wannaphong/MakHamTTS" target="_blank">MakHamTTS</a> &amp; 
+        <a href="https://huggingface.co/pythainlp/MakHamTTS" target="_blank">Thai Paradee ONNX</a>
+      </div>
+      <div>รันโมเดล Deep Learning INT8 ออฟไลน์บนเบราว์เซอร์ ไม่ต้องส่งข้อมูลไปประมวลผลที่เซิร์ฟเวอร์</div>
+    </footer>
+  </div>
+
+  <!-- ONNX Runtime Web Script -->
+  <script src="lib/ort.min.js"></script>
+  <script>
+    if (typeof ort === 'undefined') {
+      document.write('<script src="https://cdn.jsdelivr.net/npm/onnxruntime-web@1.20.1/dist/ort.min.js"><\/script>');
+    }
+  </script>
+
+  <!-- Application Entry Point -->
+  <script type="module" src="app.js"></script>
+</body>
+</html>
