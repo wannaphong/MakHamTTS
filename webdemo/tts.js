@@ -1,5 +1,6 @@
 /**
  * MakHamTTS Web Engine - runs Paradee Thai ONNX in browser with ONNX Runtime Web.
+ * Supports both WASM (CPU) and WebGPU (GPU) execution providers.
  */
 
 import { G2P } from "./g2p.js";
@@ -47,6 +48,21 @@ export function float32ToWavBlob(samples, sampleRate = 24000) {
   return buffer;
 }
 
+export async function checkWebGPUSupport() {
+  if (typeof navigator === "undefined" || !navigator.gpu) {
+    return { supported: false, reason: "เบราว์เซอร์ไม่รองรับ WebGPU (navigator.gpu is undefined)" };
+  }
+  try {
+    const adapter = await navigator.gpu.requestAdapter();
+    if (!adapter) {
+      return { supported: false, reason: "ไม่พบการ์ดจอที่รองรับ WebGPU (No WebGPU adapter found)" };
+    }
+    return { supported: true, adapter };
+  } catch (err) {
+    return { supported: false, reason: err.message };
+  }
+}
+
 export class ParadeeTTS {
   constructor() {
     this.session = null;
@@ -55,17 +71,23 @@ export class ParadeeTTS {
     this.g2p = new G2P();
     this.maxPhonemes = 510;
     this.isReady = false;
+    this.currentBackend = "wasm";
+    this.modelPath = "paradee_thai_int8.onnx";
+    this.modelBuffer = null;
   }
 
   async init({
     modelPath = "paradee_thai_int8.onnx",
     configPath = "config.json",
     dictPath = "dict.json",
+    backend = "wasm",
     onProgress = null,
   } = {}) {
     if (typeof ort === "undefined") {
       throw new Error("ONNX Runtime Web (ort) is not loaded.");
     }
+
+    this.modelPath = modelPath;
 
     // Configure WASM paths (detect local lib or default to CDN)
     const CDN_WASM_PATH = "https://cdn.jsdelivr.net/npm/onnxruntime-web@1.20.1/dist/";
@@ -91,7 +113,7 @@ export class ParadeeTTS {
       }
     }
 
-    if (onProgress) onProgress({ status: "loading_config", message: "Loading config & dictionary..." });
+    if (onProgress) onProgress({ status: "loading_config", message: "กำลังโหลดพจนานุกรม 62,112 คำ... (Loading dictionary...)" });
 
     // 1. Fetch config and dict
     let configData;
@@ -116,37 +138,68 @@ export class ParadeeTTS {
     this.sampleRate = configData.sample_rate || 24000;
     this.g2p.setDictionary(dictData);
 
-    if (onProgress) onProgress({ status: "loading_model", message: "Loading Paradee INT8 ONNX model..." });
+    // 2. Load model with requested backend
+    await this.loadModel(backend, onProgress);
+    return this;
+  }
 
-    // 2. Load ONNX Model
-    let session;
+  async loadModel(backend = "wasm", onProgress = null) {
+    if (this.session) {
+      try {
+        await this.session.release();
+      } catch {
+        // ignore release error
+      }
+      this.session = null;
+    }
+
+    this.isReady = false;
+    const backendLabel = backend === "webgpu" ? "WebGPU (GPU)" : "WASM (CPU)";
+    if (onProgress) {
+      onProgress({ status: "loading_model", message: `กำลังโหลดโมเดลด้วย ${backendLabel}... (Loading model with ${backendLabel}...)` });
+    }
+
+    const executionProviders = backend === "webgpu" ? ["webgpu", "wasm"] : ["wasm"];
     const sessionOptions = {
-      executionProviders: ["wasm"],
+      executionProviders,
       graphOptimizationLevel: "all",
     };
 
-    if (typeof window !== "undefined") {
+    let session;
+    const isBrowser = typeof window !== "undefined";
+
+    if (isBrowser) {
+      // Cache modelBuffer in memory to make backend switching instant without re-fetching
+      if (!this.modelBuffer) {
+        const resp = await fetch(this.modelPath);
+        this.modelBuffer = await resp.arrayBuffer();
+      }
       try {
-        session = await ort.InferenceSession.create(modelPath, sessionOptions);
+        session = await ort.InferenceSession.create(this.modelBuffer, sessionOptions);
       } catch (localErr) {
-        console.warn("Local WASM session creation failed, retrying with CDN fallback...", localErr);
+        console.warn(`${backend} session creation failed, retrying with CDN fallback...`, localErr);
         if (ort.env && ort.env.wasm) {
           ort.env.wasm.wasmPaths = "https://cdn.jsdelivr.net/npm/onnxruntime-web@1.20.1/dist/";
         }
-        session = await ort.InferenceSession.create(modelPath, sessionOptions);
+        session = await ort.InferenceSession.create(this.modelBuffer, sessionOptions);
       }
     } else {
       // Node.js
       const fs = await import("fs");
-      const modelBuffer = fs.readFileSync(modelPath);
-      session = await ort.InferenceSession.create(modelBuffer, sessionOptions);
+      if (!this.modelBuffer) {
+        this.modelBuffer = fs.readFileSync(this.modelPath);
+      }
+      session = await ort.InferenceSession.create(this.modelBuffer, sessionOptions);
     }
 
     this.session = session;
+    this.currentBackend = backend;
     this.isReady = true;
 
-    if (onProgress) onProgress({ status: "ready", message: "Model loaded and ready!" });
-    return this;
+    if (onProgress) {
+      onProgress({ status: "ready", message: `พร้อมใช้งาน! โมเดลทำงานบน ${backendLabel}` });
+    }
+    return session;
   }
 
   textToPhonemes(text) {
@@ -250,6 +303,7 @@ export class ParadeeTTS {
       durationSec,
       elapsedMs,
       rtf,
+      backend: this.currentBackend,
     };
   }
 }

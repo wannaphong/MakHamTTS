@@ -216,10 +216,10 @@ textarea:focus {
 /* Controls Grid */
 .controls-grid {
   display: grid;
-  grid-template-columns: 1fr auto;
+  grid-template-columns: 1fr 1fr;
   gap: 16px;
   align-items: center;
-  margin-bottom: 20px;
+  margin-bottom: 8px;
 }
 
 @media (max-width: 600px) {
@@ -244,6 +244,64 @@ textarea:focus {
 .speed-badge {
   color: #60a5fa;
   font-weight: 600;
+}
+
+.backend-selector {
+  display: flex;
+  background: #0f172a;
+  border: 1px solid var(--border-color);
+  border-radius: 8px;
+  padding: 3px;
+  gap: 4px;
+}
+
+.backend-btn {
+  flex: 1;
+  background: transparent;
+  border: none;
+  color: var(--text-muted);
+  padding: 8px 10px;
+  border-radius: 6px;
+  font-size: 0.86rem;
+  font-weight: 500;
+  cursor: pointer;
+  transition: all 0.2s ease;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: 6px;
+}
+
+.backend-btn:hover:not(:disabled) {
+  color: var(--text-main);
+  background: rgba(255, 255, 255, 0.05);
+}
+
+.backend-btn.active {
+  background: var(--primary);
+  color: #ffffff;
+  box-shadow: 0 2px 8px rgba(37, 99, 235, 0.35);
+}
+
+.backend-btn:disabled {
+  opacity: 0.45;
+  cursor: not-allowed;
+}
+
+.backend-badge {
+  font-size: 0.82rem;
+  font-weight: 600;
+  color: #38bdf8;
+}
+
+.backend-notice {
+  font-size: 0.8rem;
+  color: #fbbf24;
+  background: rgba(245, 158, 11, 0.1);
+  border: 1px solid rgba(245, 158, 11, 0.25);
+  border-radius: 6px;
+  padding: 6px 12px;
+  margin-top: 6px;
 }
 
 input[type="range"] {

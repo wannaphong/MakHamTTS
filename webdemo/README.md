@@ -9,6 +9,7 @@ Input Thai text, synthesize natural 24 kHz speech in milliseconds directly in yo
 ## ✨ Features
 
 - **Zero Python Runtime**: All text processing, tokenization, G2P phonemization, and ONNX neural network inference are ported entirely to JavaScript.
+- **Dual Execution Providers**: Supports both **⚡ WASM (CPU)** for universal compatibility and **🚀 WebGPU (GPU)** for hardware-accelerated synthesis on modern browsers (Chrome/Edge 113+, Safari 18+).
 - **Ultra-Lightweight INT8 Model**: Uses `paradee_thai_int8.onnx` (8.07 MB) with speaker timbre baked directly into the graph.
 - **High Performance**: Runs at **>15x–40x faster than real-time** on standard CPU browser threads using WebAssembly SIMD.
 - **Complete Thai Text Normalization**:

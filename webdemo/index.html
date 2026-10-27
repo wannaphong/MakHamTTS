@@ -75,11 +75,27 @@
           <input type="range" id="speedSlider" min="0.5" max="2.0" step="0.1" value="1.0">
         </div>
         <div class="control-item">
-          <button id="synthesizeBtn" class="btn-primary" disabled>
-            <div id="btnSpinner" class="spinner" style="display:none; border-top-color:#ffffff;"></div>
-            <span id="btnText">สังเคราะห์เสียง (Synthesize)</span>
-          </button>
+          <div class="speed-header">
+            <span>ตัวประมวลผล (Backend)</span>
+            <span id="backendBadge" class="backend-badge">CPU (WASM)</span>
+          </div>
+          <div class="backend-selector">
+            <button type="button" class="backend-btn active" id="btnBackendWasm" data-backend="wasm">
+              ⚡ WASM (CPU)
+            </button>
+            <button type="button" class="backend-btn" id="btnBackendWebgpu" data-backend="webgpu">
+              🚀 WebGPU (GPU)
+            </button>
+          </div>
         </div>
+      </div>
+      <div id="webgpuNotice" class="backend-notice" style="display:none;"></div>
+
+      <div style="margin-top: 14px; margin-bottom: 10px;">
+        <button id="synthesizeBtn" class="btn-primary" disabled>
+          <div id="btnSpinner" class="spinner" style="display:none; border-top-color:#ffffff;"></div>
+          <span id="btnText">สังเคราะห์เสียง (Synthesize)</span>
+        </button>
       </div>
 
       <div style="font-size:0.8rem; color:var(--text-dim); text-align:right;">
@@ -94,6 +110,7 @@
           🔊 ผลลัพธ์เสียงพูด (Synthesized Audio)
         </div>
         <div class="metrics-row">
+          <div class="metric-pill">Backend: <span id="metricBackend">WASM</span></div>
           <div class="metric-pill">ประมวลผล: <span id="metricLatency">0 ms</span></div>
           <div class="metric-pill">ความยาว: <span id="metricDuration">0.00 s</span></div>
           <div class="metric-pill">ประสิทธิภาพ: <span id="metricSpeedup">0x</span></div>
