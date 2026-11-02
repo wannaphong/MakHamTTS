@@ -3,6 +3,8 @@
 [![Hugging Face](https://img.shields.io/badge/%F0%9F%A4%97%20Hugging%20Face-MakHamTTS-blue)](https://huggingface.co/pythainlp/MakHamTTS)
 [![License: Apache 2.0](https://img.shields.io/badge/License-Apache%202.0-green.svg)](LICENSE)
 
+Web Demo: [https://github.wannaphong.com/MakHamTTS/webdemo/](https://github.wannaphong.com/MakHamTTS/webdemo/)
+
 **MakHamTTS** is a lightweight, high-performance Thai Text-to-Speech library powered by **Thai Paradee ONNX**. It runs fully offline on CPU without requiring GPU or heavy dependencies, generating natural 24 kHz speech at **over 45x–75x faster than real-time**.
 
 Unlike standard multi-voice Kokoro architectures that require external voicepack tensors at runtime, MakHamTTS uses a **standalone single-voice ONNX model** where the speaker timbre is baked directly into the graph.
