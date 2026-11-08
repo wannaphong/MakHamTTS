@@ -121,3 +121,17 @@ Hosted on HuggingFace: [pythainlp/MakHamTTS](https://huggingface.co/pythainlp/Ma
 - `train_stage1_two_voices.log`: Stage 1 loss tracking.
 - `train_stage2_two_voices.log`: Stage 2 adversarial fine-tuning tracking.
 - `styleTTS2_train.log`: StyleTTS2 internal worker logs.
+
+## Citation & Acknowledgements
+
+If you use MakHam in your research or application, please cite:
+
+```bibtex
+@misc{makham2026,
+  author       = {Wannaphong Phatthiyaphaibun},
+  title        = {MakHamTTS},
+  year         = {2026},
+  publisher    = {Hugging Face},
+  howpublished = {\url{https://huggingface.co/pythainlp/MakHamTTS}}
+}
+```
