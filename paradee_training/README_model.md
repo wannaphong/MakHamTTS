@@ -1,13 +1,15 @@
-# Thai Paradee 1.1 ONNX (Female Voice)
+# MakHam (มะขาม) Paradee 1.1 ONNX (Thai TTS)
 
-Standalone, single-voice Thai ONNX text-to-speech model distilled from **Kokoro-82M Thai** and **Paradee 1.1**, featuring the `newvoice_female` acoustic timbre.
+**MakHam (มะขาม)** is a standalone, single-voice Thai ONNX text-to-speech model distilled from **Kokoro-82M Thai** and **Paradee 1.1**, featuring the `newvoice_female` acoustic timbre.
 
+- **HuggingFace Model**: [pythainlp/MakHamTTS](https://huggingface.co/pythainlp/MakHamTTS)
+- **HuggingFace Dataset**: [pythainlp/MakHamTTS-dataset](https://huggingface.co/datasets/pythainlp/MakHamTTS-dataset)
 - **Architecture**: Paradee 1.1 single-voice distillation (`TextStudent` s+mlp 4.23M + `VDecoder` vhead v2 3.65M)
 - **Parameters**: **7.88M** (7,877,918 parameters)
 - **Small File Size**: **8.07 MB** weight-only quantized INT8 ONNX file (vs 325 MB for Kokoro-82M)
 - **Fast**: Over **45x real-time** on a single CPU thread without GPU
 
-## Artifacts in this Directory
+## Artifacts
 - `paradee_thai_int8.onnx`: 8.07 MB weight-only quantized INT8 ONNX model with generated dynamic DFT bases (recommended).
 - `paradee_thai.onnx`: 33.17 MB FP32 full-precision ONNX model.
 - `config.json`: 115-token vocab configuration for 5-tone Thai phonemes (`language: "th"`, `num_parameters: 7877918`).
@@ -20,7 +22,7 @@ Standalone, single-voice Thai ONNX text-to-speech model distilled from **Kokoro-
 - **Outputs**:
   - `waveform`: `[1, samples]` (`float32`, 24 kHz)
 
-No external `ref_s` or `.npy` voicepack is required at runtime; the female timbre is baked directly into the model.
+No external `ref_s` or `.npy` voicepack is required at runtime; the female timbre is baked directly into the model graph.
 
 ## Quick Python Example
 

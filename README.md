@@ -1,6 +1,9 @@
-# Thai Kokoro & Paradee TTS: Dataset, Training & Paradee Distillation Suite
+# MakHam (มะขาม) - Thai Text-to-Speech (TTS) Suite
 
-This directory consolidates all scripts, text corpora, metadata manifests, configurations, and training logs used to create the Thai multi-voice dataset, train the Kokoro-82M Thai base model, and distill/export Paradee Thai.
+**MakHam (มะขาม)** is a high-performance open-source Thai Text-to-Speech (TTS) model family based on **Kokoro-82M** and **Paradee 1.1** distillation, supporting 5-tone Thai phonology and standalone single-voice ONNX deployment.
+
+- **HuggingFace Model**: [pythainlp/MakHamTTS](https://huggingface.co/pythainlp/MakHamTTS)
+- **HuggingFace Dataset**: [pythainlp/MakHamTTS-dataset](https://huggingface.co/datasets/pythainlp/MakHamTTS-dataset)
 
 ---
 
@@ -41,15 +44,15 @@ github/
 │   ├── requirements.txt
 │   └── README.md
 │
-├── kokoro_training/         # StyleTTS2 multi-voice Kokoro-82M training scripts & guides
+├── kokoro_training/         # StyleTTS2 multi-voice MakHam Kokoro-82M training scripts & guides
 │   ├── train_two_voices.py  # End-to-end pipeline (prepare, stage1, stage2, package, test)
 │   ├── train_two_voices.sh  # Bash execution runner
 │   └── TRAINING_TWO_VOICES.md
 │
-├── paradee_training/        # Paradee 1.1 distillation & ONNX export suite
-│   ├── train_thai_paradee.py   # Distills Kokoro teacher into Paradee single-voice student
+├── paradee_training/        # MakHam Paradee distillation & ONNX export suite
+│   ├── train_thai_paradee.py   # Distills Kokoro teacher into MakHam single-voice student
 │   ├── export_thai_paradee.py  # ONNX graph export & INT8 quantization
-│   ├── README_model.md         # Paradee model specs & usage
+│   ├── README_model.md         # MakHam Paradee model specs & usage
 │   ├── README.md               # Paradee training documentation
 │   ├── pyproject.toml / uv.lock
 │   └── scripts/                # Architecture definitions & training modules
@@ -79,11 +82,11 @@ github/
 │   └── vocab_config.json    # 115-token Kokoro Thai vocab specification
 │
 ├── inference_examples/      # Minimal inference test scripts
-│   ├── infer_paradee.py
+│   ├── infer_paradee.py     # Standalone MakHam Paradee ONNX inference
 │   └── quick_commands.sh
 │
 └── logs/                    # Training and execution logs
-    ├── train.log            # Full end-to-end execution log
+    ├── train.log            # Full end-to-end execution log (excluded from Git repo via .gitignore)
     ├── train_stage1_two_voices.log
     ├── train_stage2_two_voices.log
     └── styleTTS2_train.log
@@ -92,6 +95,7 @@ github/
 ---
 
 ## 1. Text Dataset (`text_dataset/`)
+Hosted on HuggingFace: [pythainlp/MakHamTTS-dataset](https://huggingface.co/datasets/pythainlp/MakHamTTS-dataset)
 - **Raw Text Corpora (`raw_text/`)**: Source texts collected from Common Voice sentence collector, Thai Wikipedia, conversational transcripts, code-switching logs, and news text.
 - **Utterance Metadata (`metadata/`)**: CSV manifests for `newvoice_female` and `newvoice_male` filtered by audio integrity (>2.0s), speaker verification (ECAPA-TDNN), and Whisper CER.
 - **Training Splits (`training_splits/`)**: Format-ready phoneme lists with audio paths, 5-tone phonetic transcriptions, and speaker IDs for Kokoro training (`train_list.txt`, `val_list.txt`, `OOD_texts.txt`).
@@ -102,17 +106,17 @@ github/
 - `n0-clean-text.ipynb` & `n4-clean-text.ipynb`: Text cleaning, deduplication, and tone normalization.
 - `n1-make-voice.py`, `n2-filter_dataset.py`, `n3-filter2-and-count.py`: Utterance generation, length filtering, and statistics.
 
-## 3. Kokoro-82M Multi-Voice Training (`kokoro_training/`)
+## 3. MakHam Kokoro-82M Multi-Voice Training (`kokoro_training/`)
 - `train_two_voices.py`: Automated orchestration script supporting `prepare`, `stage1`, `stage2`, `package`, and `test`.
 - `train_two_voices.sh`: Bash wrapper script with environment overrides.
 
-## 4. Paradee Distillation & Export (`paradee_training/`)
-- `train_thai_paradee.py`: Distills teacher Kokoro (`kokoro_thai.pth` + female style vector) into single-voice Paradee 1.1 architecture (`TextStudent` 4.23M + `VDecoder` 3.65M).
-- `export_thai_paradee.py`: Bakes the female timbre directly into the ONNX graph with static/dynamic DFT bases, generating FP32 and INT8 models.
+## 4. MakHam Paradee Distillation & Export (`paradee_training/`)
+Hosted on HuggingFace: [pythainlp/MakHamTTS](https://huggingface.co/pythainlp/MakHamTTS)
+- `train_thai_paradee.py`: Distills teacher Kokoro (`kokoro_thai.pth` + female style vector) into single-voice Paradee 1.1 architecture (`TextStudent` 4.23M + `VDecoder` 3.65M, total ~7.88M parameters).
+- `export_thai_paradee.py`: Bakes the female timbre directly into the ONNX graph with static/dynamic DFT bases, generating FP32 (~33 MB) and INT8 (~8 MB) models.
 - `scripts/`: Implementation modules including student networks, discriminators, phase lock, and audio regeneration.
 
 ## 5. Execution Logs (`logs/`)
-- `train.log`: Top-level pipeline log documenting data preparation, stage 1 & 2 runs, packaging, voicepack extraction, and final synthesis tests.
 - `train_stage1_two_voices.log`: Stage 1 loss tracking.
 - `train_stage2_two_voices.log`: Stage 2 adversarial fine-tuning tracking.
 - `styleTTS2_train.log`: StyleTTS2 internal worker logs.
