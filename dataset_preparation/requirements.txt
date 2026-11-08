@@ -1,0 +1,6 @@
+torch
+omnivoice
+soundfile
+tqdm
+pandas
+speechbrain
