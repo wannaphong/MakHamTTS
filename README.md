@@ -6,6 +6,8 @@
 - **HuggingFace Model**: [pythainlp/MakHamTTS](https://huggingface.co/pythainlp/MakHamTTS)
 - **HuggingFace Dataset**: [pythainlp/MakHamTTS-dataset](https://huggingface.co/datasets/pythainlp/MakHamTTS-dataset)
 
+license: apache-2.0
+
 ---
 
 ## Directory Overview
